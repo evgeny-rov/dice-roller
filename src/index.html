@@ -2,13 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; }
-    canvas { display: block; }
-  </style>
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   <title>Your Three Js App</title>
 </head>
 <body>
+  <div id="container"></div>
+  <div id="controls-wrapper">
+    <button class="btn btn-main">ROLL</button>
+    <div class="switch-wrapper">
+      <span class="select left active">D6</span>
+      <label class="switch">
+        <input type="checkbox" id="slider" autocomplete="off">
+        <span class="slider"></span>
+      </label>
+      <span class="select right">D20</span>
+    </div>
+    <div class="amount-wrapper">
+      <button class="btn btn-set-dec">-</button>
+      <span id="roll-amount">1</span>
+      <button class="btn btn-set-inc">+</button>
+    </div>
+  </div>
 </body>
 </html>
