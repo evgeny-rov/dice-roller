@@ -4,20 +4,22 @@ import './app.css'
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Object3D } from 'three';
 import CannonDebugRenderer from './debugger';
 import icosahedronTemplate from './icosahedron'
+
+const D6_MODEL_URL = './public/nd6/scene.gltf';
+const D20_MODEL_URL = './public/3d20/scene.gltf';
 
 const translateVerticies = icosahedronTemplate.vertices.map(({ x, y, z }) => new CANNON.Vec3(x * 2, y * 2, z * 2));
 const icosahedron = { vertices: translateVerticies, faces: icosahedronTemplate.faces };
 
 interface Dice {
   physicsBody: CANNON.Body;
-  renderBody: Object3D;
+  renderBody: THREE.Object3D;
 }
 
 interface Models {
-  [type: string]: Object3D;
+  [type: string]: THREE.Object3D;
 }
 
 class Main {
@@ -87,32 +89,24 @@ class Main {
   }
 
   loader(): void {
-    this.modelLoader.load('./public/3d20/scene.gltf', (model): void => {
-      const modelType = 'd20'
-      model.scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      })
-      model.scene.scale.set(0.035, 0.035, 0.035)
-      model.scene.userData.type = modelType;
-      this.customModels = { ...this.customModels, [modelType]: model.scene };
-    });
+    const loadModel = (url: string, modelType: string, scale: number[]) => {
+      const [x, y, z] = scale;
+      this.modelLoader.load(url, (model): void => {
+        model.scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        })
+        model.scene.scale.set(x, y, z);
+        model.scene.position.set(0, 0, 100);
+        model.scene.userData.type = modelType;
+        this.customModels = { ...this.customModels, [modelType]: model.scene };
+      });
+    }
 
-    this.modelLoader.load('./public/nd6/scene.gltf', (model): void => {
-      const modelType = 'd6'
-      model.scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      })
-      model.scene.scale.set(0.16, 0.16, 0.16)
-      model.scene.position.set(0, 0, 100);
-      model.scene.userData.type = modelType;
-      this.customModels = { ...this.customModels, [modelType]: model.scene }
-    });
+    loadModel(D6_MODEL_URL, 'd6', [0.16, 0.16, 0.16])
+    loadModel(D20_MODEL_URL, 'd20', [0.035, 0.035, 0.035])
   }
 
   init() {
@@ -127,32 +121,21 @@ class Main {
   }
 
   initBounds() {
-    const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
-    const topBoundsBody = new CANNON.Body({
-      mass: 0,
-      shape: new CANNON.Plane(),
-      position: new CANNON.Vec3(0, 20, 0),
-      quaternion: new CANNON.Quaternion(0.4999, 0, 0, 0.8660),
-    });
-
-    const rightBoundsBody = new CANNON.Body({
-      mass: 0,
-      shape: new CANNON.Plane(),
-      position: new CANNON.Vec3(20, 0, 0),
-      quaternion: new CANNON.Quaternion(0, -0.4999, 0, 0.8660),
-    });
-
-    const leftBoundsBody = new CANNON.Body({
-      mass: 0,
-      shape: new CANNON.Plane(),
-      position: new CANNON.Vec3(-20, 0, 0),
-      quaternion: new CANNON.Quaternion(0, 0.4999, 0, 0.8660),
-    });
-
-    this.world.addBody(groundBody);
-    this.world.addBody(topBoundsBody);
-    this.world.addBody(rightBoundsBody);
-    this.world.addBody(leftBoundsBody);
+    const createPhysicsPlaneBody = (mass: number, pos?: number[], qt?: number[]) => {
+      const [px, py, pz] = pos || [0, 0, 0];
+      const [qx, qy, qz, qw] = qt || [0, 0, 0 ,0];
+      const body = new CANNON.Body({
+        mass,
+        shape: new CANNON.Plane(),
+        position: pos && new CANNON.Vec3(px, py, pz),
+        quaternion: qt && new CANNON.Quaternion(qx, qy, qz, qw),
+      })
+      this.world.addBody(body);
+    }
+    createPhysicsPlaneBody(0)
+    createPhysicsPlaneBody(0, [0, 20, 0], [0.4999, 0, 0, 0.8660])
+    createPhysicsPlaneBody(0, [20, 0, 0], [0, -0.4999, 0, 0.8660])
+    createPhysicsPlaneBody(0, [-20, 0, 0], [0, 0.4999, 0, 0.8660])
   }
 
   initLights() {
@@ -185,7 +168,7 @@ class Main {
     this.objectsList = [];
   }
 
-  roll(amount: number, model: Object3D) {
+  roll(amount: number, model: THREE.Object3D) {
     this.clear();
     for (let i = 0; i < amount; i++) {
       const shapeToUse = model.userData.type === 'd6'
@@ -209,7 +192,7 @@ class Main {
     this.world.step(this.fixedTimeStep);
     requestAnimationFrame(() => this.render());
     this.renderer.render(this.scene, this.camera);
-    //this.cannonDebugger.update();
+    this.cannonDebugger.update();
 
     this.objectsList.forEach(({ physicsBody, renderBody }) => {
       const { x, y, z } = physicsBody.position;
