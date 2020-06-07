@@ -22,6 +22,65 @@ interface Models {
   [type: string]: THREE.Object3D;
 }
 
+const initListeners = () => {
+  const diceAmountElement = document.getElementById('roll-amount');
+  const sliderElement = document.getElementById('slider') as HTMLInputElement;
+  const incButtonElement: HTMLElement = document.querySelector('.btn-set-inc');
+  const decButtonElement: HTMLElement = document.querySelector('.btn-set-dec');
+  const rollButtonElement: HTMLElement = document.querySelector('.btn-main');
+
+  const RollAmountHandler = (toInc: boolean) => {
+    const MaxValue = 5;
+    const minValue = 1;
+    const targetElementValue = parseInt(diceAmountElement.textContent);
+    const newValue = toInc ? targetElementValue + 1 : targetElementValue - 1; 
+    if (newValue >= minValue && newValue <= MaxValue) diceAmountElement.textContent = newValue.toString();
+  }
+
+  sliderElement.onclick = () => {
+    const selectElements = document.querySelectorAll('span.select');
+    selectElements.forEach((el) => el.classList.toggle('active'));
+  }
+
+  incButtonElement.onclick = () => RollAmountHandler(true);
+  decButtonElement.onclick = () => RollAmountHandler(false);
+
+  rollButtonElement.onclick = () => {
+    const dieType = sliderElement.checked ? scene.customModels.d20 : scene.customModels.d6;
+    const amountToRoll = parseInt(diceAmountElement.textContent);
+    scene.roll(amountToRoll, dieType);
+  }
+
+  window.addEventListener('resize', () => scene.resize());
+}
+
+const createPhysicsPlaneBody = (world: CANNON.World, mass: number, pos?: number[], qt?: number[]) => {
+  const [px, py, pz] = pos || [0, 0, 0];
+  const [qx, qy, qz, qw] = qt || [0, 0, 0 ,0];
+  const body = new CANNON.Body({
+    mass,
+    shape: new CANNON.Plane(),
+    position: pos && new CANNON.Vec3(px, py, pz),
+    quaternion: qt && new CANNON.Quaternion(qx, qy, qz, qw),
+  })
+  world.addBody(body);
+}
+
+const createLight = (scene: THREE.Scene, color: number, position: Array<number>) => {
+  const light = new THREE.SpotLight(color, 1);
+  const [x, y, z] = position;
+  light.position.set(x, y, z);
+  light.angle = Math.PI / 9;
+  light.penumbra = 1;
+  light.decay = 2;
+  light.distance = 150;
+  light.castShadow = true;
+  light.shadow.bias = -0.00001;
+  const helper = new THREE.SpotLightHelper(light)
+  //scene.add(light, helper);
+  scene.add(light)
+}
+
 class Main {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -51,7 +110,6 @@ class Main {
     this.numOfModels = 2;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    //this.renderer.setClearColor(0x000000)
     this.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
     console.log(this.renderer.getPixelRatio())
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -64,7 +122,7 @@ class Main {
     
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     
-    const planeGeometry = new THREE.PlaneBufferGeometry( 100, 100 );
+    const planeGeometry = new THREE.PlaneBufferGeometry( 200, 200 );
     const planeMaterial = new THREE.MeshPhysicalMaterial( {color: 0xFF0000, dithering: true} );
     const plane = new THREE.Mesh( planeGeometry, planeMaterial );
     plane.receiveShadow = true;
@@ -81,10 +139,14 @@ class Main {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const aspect = width / height;
+    const zoomValue = width > 600 ? 1 : 0.6;
     this.renderer.setSize(width, height);
     this.camera.aspect = aspect;
-    this.camera.fov = aspect > 1 ? 80 : 100;
-    this.camera.position.z = aspect > 1 ? 30 : 40;
+    this.camera.fov = 80;
+    this.camera.position.z = 30;
+    this.camera.zoom = zoomValue;
+    console.log(this.camera)
+    //this.camera.zoom = aspect * zoomValue;
     this.camera.updateProjectionMatrix();
   }
 
@@ -99,14 +161,14 @@ class Main {
           }
         })
         model.scene.scale.set(x, y, z);
-        model.scene.position.set(0, 0, 100);
+        model.scene.position.set(0, 0, -100);
         model.scene.userData.type = modelType;
         this.customModels = { ...this.customModels, [modelType]: model.scene };
       });
     }
 
-    loadModel(D6_MODEL_URL, 'd6', [0.16, 0.16, 0.16])
-    loadModel(D20_MODEL_URL, 'd20', [0.035, 0.035, 0.035])
+    loadModel(D6_MODEL_URL, 'd6', [0.15, 0.15, 0.15]);
+    loadModel(D20_MODEL_URL, 'd20', [0.035, 0.035, 0.035]);
   }
 
   init() {
@@ -115,47 +177,25 @@ class Main {
     if (isLoaded) {
       initListeners();
       this.roll(3, this.customModels.d6);
+      document.getElementById('controls-wrapper').style.visibility = 'visible';
     } else {
       setTimeout(() => this.init(), 100);
     }
   }
 
   initBounds() {
-    const createPhysicsPlaneBody = (mass: number, pos?: number[], qt?: number[]) => {
-      const [px, py, pz] = pos || [0, 0, 0];
-      const [qx, qy, qz, qw] = qt || [0, 0, 0 ,0];
-      const body = new CANNON.Body({
-        mass,
-        shape: new CANNON.Plane(),
-        position: pos && new CANNON.Vec3(px, py, pz),
-        quaternion: qt && new CANNON.Quaternion(qx, qy, qz, qw),
-      })
-      this.world.addBody(body);
-    }
-    createPhysicsPlaneBody(0)
-    createPhysicsPlaneBody(0, [0, 20, 0], [0.4999, 0, 0, 0.8660])
-    createPhysicsPlaneBody(0, [20, 0, 0], [0, -0.4999, 0, 0.8660])
-    createPhysicsPlaneBody(0, [-20, 0, 0], [0, 0.4999, 0, 0.8660])
+    createPhysicsPlaneBody(this.world, 0)
+    createPhysicsPlaneBody(this.world, 0, [0, 20, 0], [0.4999, 0, 0, 0.8660])
+    createPhysicsPlaneBody(this.world, 0, [0, -20, 0], [-0.3826, 0, 0, 0.9238])
+    createPhysicsPlaneBody(this.world, 0, [20, 0, 0], [0, -0.4999, 0, 0.8660])
+    createPhysicsPlaneBody(this.world, 0, [-20, 0, 0], [0, 0.4999, 0, 0.8660])
   }
 
   initLights() {
-    const createLight = (color: number, position: Array<number>) => {
-      const light = new THREE.SpotLight(color, 1);
-      const [x, y, z] = position;
-      light.position.set(x, y, z);
-      light.angle = Math.PI / 12;
-      light.penumbra = 1;
-      light.decay = 2;
-      light.distance = 150;
-      light.castShadow = true;
-      light.shadow.bias = -0.00001;
-      //const helper = new THREE.SpotLightHelper(light)
-      //this.scene.add(light, helper);
-      this.scene.add(light)
-    }
-    createLight(0x7ff2ff, [0, -50, 60]);
-    createLight(0xFFFFFF, [70, 0, 60]);
-    createLight(0xFFFFFF, [-70, 0, 60]);
+    const color = 0x359478
+    createLight(this.scene, 0xFFFFFF, [0, -40, 60]);
+    createLight(this.scene, color, [60, 0, 60]);
+    createLight(this.scene, color, [-60, 0, 60]);
     //const color = i === 0 ? 0x7ff2ff: 0x00FFFF;
   }
 
@@ -189,10 +229,10 @@ class Main {
   }
 
   render(): void {
-    this.world.step(this.fixedTimeStep);
     requestAnimationFrame(() => this.render());
+    this.world.step(this.fixedTimeStep);
     this.renderer.render(this.scene, this.camera);
-    this.cannonDebugger.update();
+    //this.cannonDebugger.update();
 
     this.objectsList.forEach(({ physicsBody, renderBody }) => {
       const { x, y, z } = physicsBody.position;
@@ -201,38 +241,6 @@ class Main {
       renderBody.position.set(x, y, z);
     })
   }
-}
-
-const initListeners = () => {
-  const diceAmountElement = document.getElementById('roll-amount');
-  const sliderElement = document.getElementById('slider') as HTMLInputElement;
-  const incButtonElement: HTMLElement = document.querySelector('.btn-set-inc');
-  const decButtonElement: HTMLElement = document.querySelector('.btn-set-dec');
-  const rollButtonElement: HTMLElement = document.querySelector('.btn-main');
-
-  const RollAmountHandler = (toInc: boolean) => {
-    const MaxValue = 5;
-    const minValue = 1;
-    const targetElementValue = parseInt(diceAmountElement.textContent);
-    const newValue = toInc ? targetElementValue + 1 : targetElementValue - 1; 
-    if (newValue >= minValue && newValue <= MaxValue) diceAmountElement.textContent = newValue.toString();
-  }
-
-  sliderElement.onclick = (e: Event) => {
-    const selectElements = document.querySelectorAll('span.select');
-    selectElements.forEach((el) => el.classList.toggle('active'));
-  }
-
-  incButtonElement.onclick = () => RollAmountHandler(true);
-  decButtonElement.onclick = () => RollAmountHandler(false);
-
-  rollButtonElement.onclick = () => {
-    const dieType = sliderElement.checked ? scene.customModels.d20 : scene.customModels.d6;
-    const amountToRoll = parseInt(diceAmountElement.textContent);
-    scene.roll(amountToRoll, dieType);
-  }
-
-  window.addEventListener('resize', () => scene.resize());
 }
 
 const scene = new Main();

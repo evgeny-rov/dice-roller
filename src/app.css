@@ -69,8 +69,8 @@ span.active {
 }
 
 .btn-main {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   outline: 0;
   order: 1;
 }
@@ -140,8 +140,8 @@ input:checked + .slider:before {
 
   .btn-main {
     order: 0;
-    height: 80px;
-    width: 80px;
+    height: 65px;
+    width: 65px;
   }
 
   .amount-wrapper {
