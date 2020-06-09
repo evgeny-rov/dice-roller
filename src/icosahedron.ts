@@ -1,18 +1,18 @@
 const t = (1.0 + Math.sqrt(5.0)) / 2.0;
 
 const vertices = [
-  { x: -1, y: t, z: 0},
-  { x: 1, y: t, z: 0},
-  { x: -1, y: -t, z: 0},
-  { x: 1, y: -t, z: 0},
-  { x: 0, y: -1, z: t},
-  { x: 0, y: 1, z: t},
-  { x: 0, y: -1, z: -t},
-  { x: 0, y: 1, z: -t},
-  { x: t, y: 0, z: -1},
-  { x: t, y: 0, z: 1},
-  { x: -t, y: 0, z: -1},
-  { x: -t, y: 0, z: 1},
+  { x: -1, y: t, z: 0 },
+  { x: 1, y: t, z: 0 },
+  { x: -1, y: -t, z: 0 },
+  { x: 1, y: -t, z: 0 },
+  { x: 0, y: -1, z: t },
+  { x: 0, y: 1, z: t },
+  { x: 0, y: -1, z: -t },
+  { x: 0, y: 1, z: -t },
+  { x: t, y: 0, z: -1 },
+  { x: t, y: 0, z: 1 },
+  { x: -t, y: 0, z: -1 },
+  { x: -t, y: 0, z: 1 },
 ];
 
 const faces: Array<any> = [
@@ -36,8 +36,8 @@ const faces: Array<any> = [
   [6, 2, 10],
   [8, 6, 7],
   [9, 8, 1],
-]
+];
 
-const icosahedron = { vertices, faces };
+const icosahedronTemplate = { vertices, faces };
 
-export default icosahedron;
+export default icosahedronTemplate;

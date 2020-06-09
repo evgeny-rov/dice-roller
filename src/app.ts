@@ -10,7 +10,8 @@ import icosahedronTemplate from './icosahedron';
 const D6_MODEL_URL = './public/nd6/scene.gltf';
 const D20_MODEL_URL = './public/3d20/scene.gltf';
 
-const translatedVerticies = icosahedronTemplate.vertices.map(({ x, y, z }) => new CANNON.Vec3(x * 2, y * 2, z * 2));
+const translatedVerticies = icosahedronTemplate.vertices
+  .map(({ x, y, z }) => new CANNON.Vec3(x * 2, y * 2, z * 2));
 const icosahedron = { vertices: translatedVerticies, faces: icosahedronTemplate.faces };
 
 interface Dice {
@@ -25,20 +26,19 @@ interface Models {
 const randNum = (multiplier: number, allowNegative: boolean = true): number => {
   const baseValue = allowNegative ? (Math.random() - 0.5) * 2 : Math.random();
   return baseValue * multiplier;
-}
+};
 
-const createPhysicsPlaneBody = (world: CANNON.World, mass: number, pos?: number[], qt?: number[]) => {
+const createPhysicsPlaneBody = (mass: number, pos?: number[], qt?: number[]) => {
   const [px, py, pz] = pos || [0, 0, 0];
-  const [qx, qy, qz, qw] = qt || [0, 0, 0 ,0];
+  const [qx, qy, qz, qw] = qt || [0, 0, 0, 0];
   const body = new CANNON.Body({
     mass,
     shape: new CANNON.Plane(),
     position: pos && new CANNON.Vec3(px, py, pz),
     quaternion: qt && new CANNON.Quaternion(qx, qy, qz, qw),
-  })
-  world.addBody(body);
+  });
   return body;
-}
+};
 
 const createLight = (scene: THREE.Scene, color: number, position: Array<number>) => {
   const light = new THREE.SpotLight(color, 1);
@@ -50,35 +50,47 @@ const createLight = (scene: THREE.Scene, color: number, position: Array<number>)
   light.distance = 150;
   light.castShadow = true;
   light.shadow.bias = -0.00001;
-  const helper = new THREE.SpotLightHelper(light)
-  //scene.add(light, helper);
-  scene.add(light)
-}
+  // const helper = new THREE.SpotLightHelper(light)
+  // scene.add(light, helper);
+  scene.add(light);
+};
 
 class Main {
   scene: THREE.Scene;
+
   camera: THREE.PerspectiveCamera;
+
   modelLoader: GLTFLoader;
+
   renderer: THREE.WebGLRenderer;
+
   controls: OrbitControls;
+
   customModels: Models;
+
   world: CANNON.World;
+
   fixedTimeStep: number;
+
   objectsList: Array<Dice>;
+
   cannonDebugger: any;
+
   numOfUsedModels: number;
+
   constructor() {
     this.scene = new THREE.Scene();
     this.world = new CANNON.World();
     this.world.gravity.set(0, 0, -60);
     this.world.broadphase = new CANNON.NaiveBroadphase();
 
-    this.camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    this.camera = new THREE.PerspectiveCamera(90, aspectRatio, 0.1, 1000);
     this.camera.fov = 80;
     this.camera.position.z = 30;
 
-    this.cannonDebugger = new CannonDebugRenderer( this.scene, this.world );
-    
+    this.cannonDebugger = new CannonDebugRenderer(this.scene, this.world);
+
     this.fixedTimeStep = 1.0 / 60.0;
     this.modelLoader = new GLTFLoader();
     this.customModels = {};
@@ -91,15 +103,15 @@ class Main {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
-    
-    const containerElement: HTMLElement = document.getElementById('container');
-    containerElement && containerElement.appendChild(this.renderer.domElement);
-    
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-    
-    const planeGeometry = new THREE.PlaneBufferGeometry( 200, 200 );
-    const planeMaterial = new THREE.MeshPhysicalMaterial( {color: 0xF10003, dithering: true} );
-    const plane = new THREE.Mesh( planeGeometry, planeMaterial );
+
+    const containerElement = document.getElementById('container') as HTMLElement;
+    containerElement.appendChild(this.renderer.domElement);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+    const planeGeometry = new THREE.PlaneBufferGeometry(200, 200);
+    const planeMaterial = new THREE.MeshPhysicalMaterial({ color: 0xF10003, dithering: true });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.receiveShadow = true;
     this.scene.add(plane);
 
@@ -126,13 +138,15 @@ class Main {
     this.modelLoader.load(url, (model): void => {
       model.scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+          const mesh = child;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
         }
-      })
+      });
+      const { userData } = model.scene;
       model.scene.scale.set(x, y, z);
       model.scene.position.set(0, 0, -100);
-      model.scene.userData.type = modelType;
+      userData.type = modelType;
       this.customModels = { ...this.customModels, [modelType]: model.scene };
     });
   }
@@ -151,11 +165,11 @@ class Main {
   }
 
   initBounds() {
-    createPhysicsPlaneBody(this.world, 0);
-    createPhysicsPlaneBody(this.world, 0, [0, 20, 0], [0.7071, 0, 0, 0.7071]);
-    createPhysicsPlaneBody(this.world, 0, [0, -20, 0], [-0.3826, 0, 0, 0.9238]);
-    createPhysicsPlaneBody(this.world, 0, [20, 0, 0], [0, -0.7071, 0, 0.7071]);
-    createPhysicsPlaneBody(this.world, 0, [-20, 0, 0], [0, 0.7071, 0, 0.7071]);
+    this.world.addBody(createPhysicsPlaneBody(0));
+    this.world.addBody(createPhysicsPlaneBody(0, [0, 20, 0], [0.7071, 0, 0, 0.7071]));
+    this.world.addBody(createPhysicsPlaneBody(0, [0, -20, 0], [-0.3826, 0, 0, 0.9238]));
+    this.world.addBody(createPhysicsPlaneBody(0, [20, 0, 0], [0, -0.7071, 0, 0.7071]));
+    this.world.addBody(createPhysicsPlaneBody(0, [-20, 0, 0], [0, 0.7071, 0, 0.7071]));
   }
 
   initLights() {
@@ -169,17 +183,17 @@ class Main {
       this.scene.remove(dice.renderBody);
       this.scene.dispose();
       this.world.remove(dice.physicsBody);
-    })
+    });
     this.objectsList = [];
   }
 
   roll(amount: number, model: THREE.Object3D) {
     this.clear();
-    for (let i = 0; i < amount; i++) {
+    for (let i = 0; i < amount; i += 1) {
       const diceShape = model.userData.type === 'd6'
         ? new CANNON.Box(new CANNON.Vec3(1.5, 1.5, 1.5))
         : new CANNON.ConvexPolyhedron(icosahedron.vertices, icosahedron.faces);
-      
+
       const diceModel = model.clone();
       const diceBody = new CANNON.Body({
         mass: 1,
@@ -189,7 +203,7 @@ class Main {
         shape: diceShape,
       });
 
-      //diceBody.addEventListener('collide', (body: CANNON.Body) => console.log('collision', body))
+      // diceBody.addEventListener('collide', (body: CANNON.Body) => console.log('collision', body))
       this.world.addBody(diceBody);
       this.scene.add(diceModel);
       this.objectsList.push({ physicsBody: diceBody, renderBody: diceModel });
@@ -200,16 +214,20 @@ class Main {
     requestAnimationFrame(() => this.render());
     this.world.step(this.fixedTimeStep);
     this.renderer.render(this.scene, this.camera);
-    //this.cannonDebugger.update();
+    // this.cannonDebugger.update();
 
     this.objectsList.forEach(({ physicsBody, renderBody }) => {
       const { x, y, z } = physicsBody.position;
       const qt = physicsBody.quaternion;
       renderBody.quaternion.set(qt.x, qt.y, qt.z, qt.w);
       renderBody.position.set(x, y, z);
-    })
+    });
   }
 }
+
+const scene = new Main();
+scene.render();
+scene.init();
 
 const diceAmountElement: HTMLElement = document.getElementById('roll-amount');
 const sliderElement = document.getElementById('slider') as HTMLInputElement;
@@ -220,27 +238,25 @@ const rollButtonElement: HTMLElement = document.querySelector('.btn-main');
 const RollAmountHandler = (toInc: boolean) => {
   const MaxValue = 5;
   const minValue = 1;
-  const targetElementValue = parseInt(diceAmountElement.textContent);
-  const newValue = toInc ? targetElementValue + 1 : targetElementValue - 1; 
-  if (newValue >= minValue && newValue <= MaxValue) diceAmountElement.textContent = newValue.toString();
-}
+  const targetElementValue = Number(diceAmountElement.textContent);
+  const newValue = toInc ? targetElementValue + 1 : targetElementValue - 1;
+  if (newValue >= minValue && newValue <= MaxValue) {
+    diceAmountElement.textContent = newValue.toString();
+  }
+};
 
 sliderElement.onclick = () => {
   const selectElements = document.querySelectorAll('span.select');
   selectElements.forEach((el) => el.classList.toggle('active'));
-}
+};
 
 incButtonElement.onclick = () => RollAmountHandler(true);
 decButtonElement.onclick = () => RollAmountHandler(false);
 
 rollButtonElement.onclick = () => {
   const dieType = sliderElement.checked ? scene.customModels.d20 : scene.customModels.d6;
-  const amountToRoll = parseInt(diceAmountElement.textContent);
+  const amountToRoll = Number(diceAmountElement.textContent);
   scene.roll(amountToRoll, dieType);
-}
+};
 
 window.addEventListener('resize', () => scene.resize());
-
-const scene = new Main();
-scene.render();
-scene.init();

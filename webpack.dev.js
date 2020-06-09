@@ -19,7 +19,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.ts', '.js', '.json']
+    extensions: ['.ts', '.js', '.json'],
   },
   plugins: [
     new HtmlWebpackPlugin({ template: './src/index.html' }),
