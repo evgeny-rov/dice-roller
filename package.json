@@ -30,7 +30,7 @@
     "webpack-merge": "^4.2.2"
   },
   "scripts": {
-    "start": "webpack-dev-server --config webpack.dev.js --open --host 192.168.1.9",
+    "start": "webpack-dev-server --config webpack.dev.js --open",
     "build": "webpack --config webpack.prod.js"
   },
   "author": "Evgeny-Rov",
