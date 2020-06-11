@@ -65,7 +65,7 @@ export default class {
     this.numOfUsedModels = 2;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+    this.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -165,9 +165,9 @@ export default class {
   clear() {
     this.objectsList.forEach((dice) => {
       this.scene.remove(dice.renderBody);
-      this.scene.dispose();
       this.world.remove(dice.physicsBody);
     });
+    this.scene.dispose();
     this.objectsList = [];
   }
 
