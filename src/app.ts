@@ -1,3 +1,5 @@
+import './app.css';
+
 import Scene from './Scene';
 
 const app = new Scene();

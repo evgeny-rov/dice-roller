@@ -3,8 +3,6 @@ import * as CANNON from 'cannon';
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-import './app.css';
-
 import icosahedronTemplate from './icosahedron';
 
 const D6_MODEL_URL = './public/d6/scene.gltf';
@@ -74,8 +72,9 @@ export default class {
     const containerElement = document.getElementById('container') as HTMLElement;
     containerElement.appendChild(this.renderer.domElement);
 
+    const color = 0xF10003;
     const planeGeometry = new THREE.PlaneBufferGeometry(200, 200);
-    const planeMaterial = new THREE.MeshPhysicalMaterial({ color: 0xF10003, dithering: true });
+    const planeMaterial = new THREE.MeshPhysicalMaterial({ color, dithering: true });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.receiveShadow = true;
     this.scene.add(plane);
@@ -149,7 +148,7 @@ export default class {
     this.world.addBody(body);
   }
 
-  addSpotLight(color: number, position: Array<number>) {
+  addSpotLight(color: number, position: number[]) {
     const light = new THREE.SpotLight(color, 1);
     const [x, y, z] = position;
     light.position.set(x, y, z);
@@ -164,10 +163,15 @@ export default class {
 
   clear() {
     this.objectsList.forEach((dice) => {
+      dice.renderBody.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
       this.scene.remove(dice.renderBody);
       this.world.remove(dice.physicsBody);
     });
-    this.scene.dispose();
     this.objectsList = [];
   }
 
