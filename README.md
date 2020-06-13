@@ -1,11 +1,14 @@
-# Three.js Typescript Webpack Template
-This is a project template for building basic apps using three.js, typescript and webpack
+# 3D Dice Roller
+Roll virtual 3D dice. Made with Three.js and Cannon.js
+
+Latest build hosted on [gh-pages](https://evgeny-rov.github.io/dice-roller/)
 ## Get started
 ```
 $ git clone https://github.com/evgeny-rov/threejs-template.git
+$ cd dice-roller/
 $ npm install
 ```
-## Usage
+## Commands
 Build project and open web server running project:
 ```
 $ npm run start
