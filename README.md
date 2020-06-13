@@ -4,7 +4,7 @@ Roll virtual 3D dice. Made with Three.js and Cannon.js
 Latest build hosted on [gh-pages](https://evgeny-rov.github.io/dice-roller/)
 ## Get started
 ```
-$ git clone https://github.com/evgeny-rov/threejs-template.git
+$ git clone https://github.com/evgeny-rov/dice-roller.git
 $ cd dice-roller/
 $ npm install
 ```
