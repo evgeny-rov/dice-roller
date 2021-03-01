@@ -5,7 +5,7 @@
   "main": "/src",
   "dependencies": {
     "cannon": "^0.6.2",
-    "three": "^0.117.0"
+    "three": "^0.125.0"
   },
   "devDependencies": {
     "@types/cannon": "^0.1.4",
